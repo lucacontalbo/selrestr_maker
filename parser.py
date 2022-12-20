@@ -70,13 +70,14 @@ class Parser:
 	def uriref2name(self,uriref):
 		return str(uriref).split('/')[-1].split('#')[-1]
 
-	def calculate_probabilities(self):
+	def calculate_frequencies(self):
 		probabilities = {}
 		for file_path in os.listdir(self.directory_path):
 			graph = self.graph_init(self.directory_path+file_path)
 			frame_occurrence_list = self.get_frame_occ_list(graph)
 			for frame_occurrence in frame_occurrence_list:
-				frame_occurrence_str = self.uriref2name(frame_occurrence)
+				frame_occurrence_type = graph.value(frame_occurrence,self.rdf.type,None)
+				frame_occurrence_str = self.uriref2name(frame_occurrence_type)
 				if frame_occurrence_str not in probabilities.keys():
 					probabilities[frame_occurrence_str] = {}
 				for _,p,_ in graph.triples((frame_occurrence,None,None)):
@@ -85,9 +86,12 @@ class Parser:
 						if p_str not in probabilities[frame_occurrence_str].keys():
 							probabilities[frame_occurrence_str][p_str] = {}
 						for _,_,o in graph.triples((frame_occurrence,p,None)):
-							o_type = graph.triples((o,self.rdf.type,None))
+							o_type = graph.value(o,self.rdf.type,None)
 							o_type_str = self.uriref2name(o_type)
 							if o_type_str not in probabilities[frame_occurrence_str][p_str].keys():
 								probabilities[frame_occurrence_str][p_str][o_type_str] = 0
 							probabilities[frame_occurrence_str][p_str][o_type_str]+=1
 		return probabilities
+
+	def calculate_metrics(self):
+		pass
