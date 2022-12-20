@@ -70,28 +70,53 @@ class Parser:
 	def uriref2name(self,uriref):
 		return str(uriref).split('/')[-1].split('#')[-1]
 
-	def calculate_frequencies(self):
-		probabilities = {}
+	def get_frequencies_dict(self):
+		frequencies = {}
+		frequencies['support_count'] = 0
 		for file_path in os.listdir(self.directory_path):
 			graph = self.graph_init(self.directory_path+file_path)
 			frame_occurrence_list = self.get_frame_occ_list(graph)
 			for frame_occurrence in frame_occurrence_list:
 				frame_occurrence_type = graph.value(frame_occurrence,self.rdf.type,None)
 				frame_occurrence_str = self.uriref2name(frame_occurrence_type)
-				if frame_occurrence_str not in probabilities.keys():
-					probabilities[frame_occurrence_str] = {}
+				if frame_occurrence_str not in frequencies.keys():
+					frequencies[frame_occurrence_str] = {}
+					frequencies[frame_occurrence_str]['support_count'] = 0
 				for _,p,_ in graph.triples((frame_occurrence,None,None)):
 					if p.startswith(self.pb_role):
 						p_str = self.uriref2name(p)
-						if p_str not in probabilities[frame_occurrence_str].keys():
-							probabilities[frame_occurrence_str][p_str] = {}
+						if p_str not in frequencies[frame_occurrence_str].keys():
+							frequencies[frame_occurrence_str][p_str] = {}
+							frequencies[frame_occurrence_str][p_str]['support_count'] = 0
 						for _,_,o in graph.triples((frame_occurrence,p,None)):
 							o_type = graph.value(o,self.rdf.type,None)
 							o_type_str = self.uriref2name(o_type)
-							if o_type_str not in probabilities[frame_occurrence_str][p_str].keys():
-								probabilities[frame_occurrence_str][p_str][o_type_str] = 0
-							probabilities[frame_occurrence_str][p_str][o_type_str]+=1
-		return probabilities
+							if o_type_str not in frequencies[frame_occurrence_str][p_str].keys():
+								frequencies[frame_occurrence_str][p_str][o_type_str] = {}
+								frequencies[frame_occurrence_str][p_str][o_type_str]['support_count'] = 0
+							frequencies[frame_occurrence_str][p_str][o_type_str]['support_count']+=1
+							frequencies[frame_occurrence_str][p_str]['support_count']+=1
+							frequencies[frame_occurrence_str]['support_count']+=1
+							frequencies['support_count']+=1
+		return frequencies
 
-	def calculate_metrics(self):
-		pass
+	def calculate_metrics(self,frequency,total_frequency,frequency_previous):
+		support = float(frequency)/float(total_frequency)
+		confidence = float(frequency)/float(frequency_previous)
+		return support, confidence
+
+	def get_metrics_dict(self,frequency_dict):
+		for k1,v1 in frequency_dict.items():
+			if k1 == 'support_count': continue
+			for k2,v2 in v1.items():
+				if k2 == 'support_count': continue
+				for k3,v3 in v2.items():
+					if k3 == 'support_count': continue
+					frequency_dict[k1][k2][k3]['support'], frequency_dict[k1][k2][k3]['confidence']= \
+						self.calculate_metrics(frequency_dict[k1][k2][k3]['support_count'], frequency_dict['support_count'], frequency_dict[k1][k2]['support_count'])
+				frequency_dict[k1][k2]['support'], frequency_dict[k1][k2]['confidence']= \
+					self.calculate_metrics(frequency_dict[k1][k2]['support_count'], frequency_dict['support_count'], frequency_dict[k1]['support_count'])
+			frequency_dict[k1]['support'], frequency_dict[k1]['confidence']= \
+				self.calculate_metrics(frequency_dict[k1]['support_count'], frequency_dict['support_count'], frequency_dict['support_count'])
+
+		return frequency_dict

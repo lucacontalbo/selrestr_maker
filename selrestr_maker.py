@@ -12,7 +12,7 @@ pp = pprint.PrettyPrinter()
 
 parser = Parser(directory_path)
 
-frequency_dict = parser.calculate_frequencies()
-metrics_dict = parser.calculate_metrics(frequency_dict)
+frequency_dict = parser.get_frequencies_dict()
+metrics_dict = parser.get_metrics_dict(frequency_dict)
 
 pp.pprint(metrics_dict)
