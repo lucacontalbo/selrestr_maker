@@ -2,7 +2,7 @@ import os
 import validators
 from rdflib import URIRef
 
-data_path = './musicbo_rdf_wikidata_specid/'
+data_path = './musicbo_rdf_wikidata_specid2/'
 
 for file in os.listdir(data_path):
 	if file.split('.')[-1] == 'py':
@@ -25,11 +25,12 @@ for file in os.listdir(data_path):
 
 		for i in range(len(line_original)-1):
 			if not validators.url(line_original[i]):
-				print("{} --- {}".format(file,line_original[i]))
+				#print("{} --- {}".format(file,line_original[i]))
 				line_parsed.append(line_original[i])
 			else:
 				line_parsed.append('<'+''.join(line_original[i].split())+'>')
-		new_line_str = ' '.join(line_parsed)+' .'
+		new_line_str = ' '.join(line_parsed[:3])+' .'
+
 		new_text.append(new_line_str)
 	new_text_str = '\n'.join(new_text)
 

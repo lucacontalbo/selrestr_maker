@@ -1,4 +1,5 @@
 from parser import Parser
+from create_axioms import create_axioms_owlstar
 import argparse
 import pprint
 
@@ -13,6 +14,12 @@ pp = pprint.PrettyPrinter()
 parser = Parser(directory_path)
 
 frequency_dict = parser.get_frequencies_dict()
+frequency_dict = parser.clean_dictionary(frequency_dict)
+
 metrics_dict = parser.get_metrics_dict(frequency_dict)
 
-pp.pprint(metrics_dict)
+parser.print_statistics(frequency_dict)
+
+#pp.pprint(metrics_dict)
+
+#create_axioms_owlstar(metrics_dict,'ontologies')
