@@ -105,8 +105,6 @@ class Parser:
 		splitted = str(uriref).split('/')[-1].split('#')
 		uri_base, name = '/'.join(splitted[:-1]), splitted[-1]
 
-		print(name)
-
 		if uri_base in self.uri2namespace.keys():
 			return self.uri2namespace[uri_base]+':'+name
 		else:
@@ -141,7 +139,6 @@ class Parser:
 							frequencies[frame_occurrence_str]['subj_frequency']+=1
 							frequencies['frequency']+=1
 							frequencies = self.generalize(frequencies,graph,frame_occurrence_str,p_str,o_type)
-		print(a)
 		return frequencies
 
 	def calculate_metrics(self,frequency,total_frequency,frequency_previous):
@@ -186,7 +183,6 @@ class Parser:
 			result = self.sparql_query.query(query_text)
 		except:
 			self.count_sparql_errors += 1
-			#print(self.count_sparql_errors)
 			return frequency_dict
 
 		if isinstance(result,bytes) or result == None or len(result['results']['bindings']) == 0:
@@ -234,7 +230,6 @@ class Parser:
 						most_frequent_types[k3] = 0
 					print("{} --- {}".format(k3,type(k3)))
 					most_frequent_types[k3] += 1
-		print(a)
 		most_frequent_groupings = {}
 		most_frequent_groupings_count = {}
 		for k1,v1 in frequency_dict.items():

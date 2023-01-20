@@ -18,8 +18,8 @@ frequency_dict = parser.clean_dictionary(frequency_dict)
 
 metrics_dict = parser.get_metrics_dict(frequency_dict)
 
-parser.print_statistics(frequency_dict)
+#parser.print_statistics(frequency_dict)
 
 #pp.pprint(metrics_dict)
 
-#create_axioms_owlstar(metrics_dict,'ontologies')
+create_axioms_owlstar(metrics_dict,'ontologies')
