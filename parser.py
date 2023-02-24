@@ -114,29 +114,30 @@ class Parser:
 		frequencies = {}
 		frequencies['frequency'] = 0
 		for file_path in os.listdir(self.directory_path):
+			if file_path.split('.')[-1] != 'owl': continue
 			graph = self.graph_init(os.path.join(self.directory_path,file_path))
 			frame_occurrence_list = self.get_frame_occ_list(graph)
 			for frame_occurrence in frame_occurrence_list:
 				frame_occurrence_type = graph.value(frame_occurrence,self.rdf.type,None)
 				frame_occurrence_str = self.uriref2name(frame_occurrence_type)
-				if frame_occurrence_str not in frequencies.keys():
-					frequencies[frame_occurrence_str] = {}
-					frequencies[frame_occurrence_str]['subj_frequency'] = 0
+				if str(frame_occurrence_type) not in frequencies.keys():
+					frequencies[str(frame_occurrence_type)] = {}
+					frequencies[str(frame_occurrence_type)]['subj_frequency'] = 0
 				for _,p,_ in graph.triples((frame_occurrence,None,None)):
 					if p.startswith(self.pb_role):
 						p_str = self.uriref2name(p)
-						if p_str not in frequencies[frame_occurrence_str].keys():
-							frequencies[frame_occurrence_str][p_str] = {}
-							frequencies[frame_occurrence_str][p_str]['subj_pred_frequency'] = 0
+						if str(p) not in frequencies[str(frame_occurrence_type)].keys():
+							frequencies[str(frame_occurrence_type)][str(p)] = {}
+							frequencies[str(frame_occurrence_type)][str(p)]['subj_pred_frequency'] = 0
 						for _,_,o in graph.triples((frame_occurrence,p,None)):
-							o_type = graph.value(o,self.rdf.type,None)
+							o_type = str(graph.value(o,self.rdf.type,None))
 							o_type_str = self.uriref2name(o_type)
-							if o_type_str not in frequencies[frame_occurrence_str][p_str].keys():
-								frequencies[frame_occurrence_str][p_str][o_type_str] = {}
-								frequencies[frame_occurrence_str][p_str][o_type_str]['subj_pred_obj_frequency'] = 0
-							frequencies[frame_occurrence_str][p_str][o_type_str]['subj_pred_obj_frequency']+=1
-							frequencies[frame_occurrence_str][p_str]['subj_pred_frequency']+=1
-							frequencies[frame_occurrence_str]['subj_frequency']+=1
+							if o_type not in frequencies[str(frame_occurrence_type)][str(p)].keys():
+								frequencies[str(frame_occurrence_type)][str(p)][o_type] = {}
+								frequencies[str(frame_occurrence_type)][str(p)][o_type]['subj_pred_obj_frequency'] = 0
+							frequencies[str(frame_occurrence_type)][str(p)][o_type]['subj_pred_obj_frequency']+=1
+							frequencies[str(frame_occurrence_type)][str(p)]['subj_pred_frequency']+=1
+							frequencies[str(frame_occurrence_type)]['subj_frequency']+=1
 							frequencies['frequency']+=1
 							frequencies = self.generalize(frequencies,graph,frame_occurrence_str,p_str,o_type)
 		return frequencies
@@ -191,13 +192,16 @@ class Parser:
 			pass
 
 		o_wn_generalized = result['results']['bindings'][0]['o']['value']
-		o_wn_generalized_str = o_wn_generalized.split('-')[1]
+		#o_wn_generalized_str = o_wn_generalized.split('-')[1]
+		o_wn_generalized_str = str(o_wn_generalized)
 
 		o_wn_generalized2 = result['results']['bindings'][0]['o2']['value']
-		o_wn_generalized2_str = o_wn_generalized2.split('-')[1]
+		#o_wn_generalized2_str = o_wn_generalized2.split('-')[1]
+		o_wn_generalized2_str = str(o_wn_generalized2)
 
 		o_wn_generalized3 = result['results']['bindings'][0]['o3']['value']
-		o_wn_generalized3_str = o_wn_generalized3.split('-')[1]
+		o_wn_generalized3_str = str(o_wn_generalized3)
+		#o_wn_generalized3_str = o_wn_generalized3.split('-')[1]
 
 		frequency_dict = update_graph(self,frequency_dict,s,p,o,o_wn_generalized_str)
 		frequency_dict = update_graph(self,frequency_dict,s,p,o,o_wn_generalized2_str)

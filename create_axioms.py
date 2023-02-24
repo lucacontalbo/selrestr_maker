@@ -12,19 +12,42 @@ def create_axioms_owlstar(dictionary,output_folder): #properties_input_tsv, trip
 		ttls.write("@prefix os: <http://w3id.org/owlstar/> ." + "\n")
 		ttls.write("@prefix pbdata: <https://w3id.org/framester/pb/data/> ." + "\n")
 		ttls.write("@prefix pbrole: <https://w3id.org/framester/pb/localrole/> ." + "\n")
+		ttls.write("@prefix selrestr: <http://w3id.org/selrestr/> ." + "\n")
 
 		ttls.write("\n")
 
 		#add ontology metadata
 
+		set_classes = set()
+		set_properties = set()
+		text = ''
+		counter = 0
 		for subj,value1 in dictionary.items():
 			if not isinstance(value1,dict): continue
 			for pred,value2 in value1.items():
 				if not isinstance(value2,dict): continue
 				for obj,value3 in value2.items():
 					if not isinstance(value3,dict): continue
-					ttls.write('<< << pbdata:' + subj + ' pbrole:' + pred + ' pbdata:' + obj + ' >> os:interpretation os:AllSomeInterpretation . >> os:probability ' \
-						+ '"' + str(value3['subj_pred_obj_probability']*100) + '%" .' + '\n\n') #+ "\" ; mb " + prob_pattern + " ." + "\n" + "\n")
+					text += '<< << pbdata:' + subj + ' pbrole:' + pred + ' pbdata:' + obj + ' >> os:interpretation os:AllSomeInterpretation . >> os:probability ' \
+						+ '"' + str(value3['subj_pred_obj_probability']*100) + '%" .' + '\n\n'
+					set_classes.add('pbdata:{}'.format(subj))
+					set_classes.add('pbdata:{}'.format(obj))
+					set_properties.add('pbrole:{}'.format(pred))
+					counter += 1
+
+		for instance in set_classes:
+			ttls.write('{} rdf:type owl:Class .\n'.format(instance))
+		for instance in set_properties:
+			ttls.write('{} rdf:type owl:ObjectProperty .\n'.format(instance))
+
+		ttls.write('\n{}'.format(text))
+
+		print('Number of classes: {}'.format(len(set_classes)))
+		print('Number of properties: {}'.format(len(set_properties)))
+		print('Number of datatype properties: {}'.format(counter))
+
+					#ttls.write('<< << pbdata:' + subj + ' pbrole:' + pred + ' pbdata:' + obj + ' >> os:interpretation os:AllSomeInterpretation . >> os:probability ' \
+					#	+ '"' + str(value3['subj_pred_obj_probability']*100) + '%" .' + '\n\n')
 
 
 def create_axioms(dictionary,output_folder):
