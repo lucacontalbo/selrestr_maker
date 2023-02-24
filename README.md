@@ -32,3 +32,7 @@ It is also possible to run a OWLStar to OWL parser:
 
 As of now, the tool is only able to produce .ttl files
 
+## More info about selectional restrictions
+
+- [Stanford slides](https://web.stanford.edu/~jurafsky/slp3/slides/22_select.pdf) (beware that this link will automatically download a pdf file)
+- [VerbNet selectional restrictions](https://clear.colorado.edu/compsem/index.php?page=nlpcomponents&sub=verbnet)
