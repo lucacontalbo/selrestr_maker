@@ -15,14 +15,9 @@ pp = pprint.PrettyPrinter()
 parser = Parser(directory_path)
 
 frequency_dict = parser.get_frequencies_dict()
-frequency_dict = parser.clean_dictionary(frequency_dict)
-
-with open('frequency_dict.pkl','wb') as writer:
-	pickle.dump(frequency_dict,writer)
+#frequency_dict = parser.clean_dictionary(frequency_dict)
 
 metrics_dict = parser.get_metrics_dict(frequency_dict)
-
-#parser.print_statistics(frequency_dict)
 
 with open('metrics_dict.pkl','wb') as writer:
 	pickle.dump(metrics_dict, writer)

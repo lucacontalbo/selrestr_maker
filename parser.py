@@ -2,6 +2,10 @@ from rdflib import Graph, RDF, RDFS, URIRef, Namespace
 import os
 from copy import deepcopy
 from SPARQLQuery import SPARQLQuery
+from scipy.stats import entropy
+from scipy.special import softmax
+import numpy as np
+from sklearn.preprocessing import normalize
 
 class Parser:
 	"""
@@ -261,3 +265,37 @@ class Parser:
 		for r in sorted_keys:
 			print("{} --- {} --- {}".format(r, most_frequent_groupings_count[r], most_frequent_groupings[r]))
 
+
+	def get_types(self,frequency_dict,zero=False):
+		types = {}
+		for k1,v1 in frequency_dict.items():
+			if not isinstance(v1,dict): continue
+			for k2,v2 in v1.items():
+				if not isinstance(v2,dict): continue
+				for k3,v3 in v2.items():
+					if not isinstance(v3,dict): continue
+					if zero:
+						types[k3] = 0.0001
+					elif k3 not in types.keys():
+						types[k3] = v3['subj_pred_obj_frequency']
+					else:
+						types[k3] += v3['subj_pred_obj_frequency']
+		return types
+
+	def get_preference(self,frequency_dict,frame):
+		types = self.get_types(frequency_dict)
+		types_given_frame = self.get_types(frequency_dict,zero=True)
+		for k,v1 in frequency_dict[frame].items():
+			if not isinstance(v1,dict): continue
+			for k2,v2 in v1.items():
+				if not isinstance(v2,dict): continue
+				types_given_frame[k2] += v2['subj_pred_obj_frequency']
+		types_list = normalize(np.array([v for k,v in types.items()])[:,np.newaxis], axis=0).reshape(-1)
+		types_names = [k for k,v in types.items()]
+		types_given_frame_list = normalize(np.array([v for k,v in types_given_frame.items()])[:,np.newaxis], axis=0).reshape(-1)
+		"""if 'compose' in str(frame) or 'sing' in str(frame) or 'write' in str(frame) or 'record' in str(frame):
+			print("Frame {}".format(frame))
+			print("before: {}".format([[x.split('/')[-1],y,z] for x,y,z in zip(types_names,types_list,np.arange(len(types_names)))]))
+			print("after: {}".format([[x.split('/')[-1],y,z] for x,y,z in zip(types_names,types_given_frame_list,np.arange(len(types_names)))]))
+		""" #print("Selectional preference of frame {} is {}".format(frame.split('/')[-1].split('#')[-1],entropy(types_given_frame_list,types_list)))
+		return frame, entropy(types_list,types_given_frame_list)
