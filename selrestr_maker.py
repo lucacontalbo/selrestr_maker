@@ -15,11 +15,10 @@ pp = pprint.PrettyPrinter()
 parser = Parser(directory_path)
 
 frequency_dict = parser.get_frequencies_dict()
-#frequency_dict = parser.clean_dictionary(frequency_dict)
 
 metrics_dict = parser.get_metrics_dict(frequency_dict)
 
 with open('metrics_dict.pkl','wb') as writer:
 	pickle.dump(metrics_dict, writer)
 
-#create_axioms_owlstar(metrics_dict,'ontologies')
+pp.pprint(frequency_dict)

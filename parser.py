@@ -130,6 +130,7 @@ class Parser:
 				for _,p,_ in graph.triples((frame_occurrence,None,None)):
 					if p.startswith(self.pb_role):
 						p_str = self.uriref2name(p)
+						types = []
 						if str(p) not in frequencies[str(frame_occurrence_type)].keys():
 							frequencies[str(frame_occurrence_type)][str(p)] = {}
 							frequencies[str(frame_occurrence_type)][str(p)]['subj_pred_frequency'] = 0
@@ -143,7 +144,12 @@ class Parser:
 							frequencies[str(frame_occurrence_type)][str(p)]['subj_pred_frequency']+=1
 							frequencies[str(frame_occurrence_type)]['subj_frequency']+=1
 							frequencies['frequency']+=1
-							frequencies = self.generalize(frequencies,graph,frame_occurrence_str,p_str,o_type)
+							types.append(o_type)
+						common_ancestor_type, cardinality = self.generalize_common(graph,types)
+						if common_ancestor_type not in frequencies[str(frame_occurrence_type)][str(p)].keys(): #TODO: add generalization info
+							frequencies[str(frame_occurrence_type)][str(p)][str(common_ancestor_type)] = {}
+							frequencies[str(frame_occurrence_type)][str(p)][str(common_ancestor_type)]['subj_pred_obj_frequency'] = cardinality
+						#frequencies = self.generalize(frequencies,graph,frame_occurrence_str,p_str,o_type)
 		return frequencies
 
 	def calculate_metrics(self,frequency,total_frequency,frequency_previous):
@@ -167,7 +173,49 @@ class Parser:
 
 		return frequency_dict
 
-	def generalize(self,frequency_dict,graph,s,p,o):
+	def generalize_common(self,graph,types,k=1): #generalize up until most general type across WordNet taxonomy. Issue: highly computationally demanding due to high number
+					   #of SPARQL queries. One possible fix would be to extract the Wordnet hypernim paths into a separate file and load it without using sparql queries.
+					   #for reduced computational time, the parameter k puts a bound on the number of possible hypernim steps.
+		wn_types = []
+		for o in types: #extract wn alignments for each type
+			o_wn = graph.value(URIRef(o),self.owl.equivalentClass,None)
+			if o_wn == None: continue
+			wn_types.append(o_wn)
+		generalizations = []
+		for type1 in wn_types: #extract wn hierarchy path for each type
+			generalized_type = [type1]
+			for i in range(k):
+				query_text = 'SELECT ?o WHERE {{ <'+str(type1)+'> <'+str(self.wn.hyponymOf)+'> ?o .}}'
+				try:
+					result = self.sparql_query.query(query_text)
+				except:
+					break
+				if isinstance(result,bytes) or result == None or len(result['results']['bindings']) == 0:
+					break
+				wn_generalized_type = result['results']['bindings'][0]['o']['value']
+				generalized_type.append(wn_generalized_type)
+				type1 = wn_generalized_type
+			generalizations.append(generalized_type)
+
+		common_ancestor_type = None
+		if len(generalizations) == 0:
+			return common_ancestor_type, 0
+
+		for type in generalizations[0]:
+			common_ancestor = True
+			for i in range(1,len(generalizations)):
+				if type not in generalizations[i]:
+					common_ancestor = False
+					break
+			if common_ancestor:
+				common_ancestor_type = type
+				break
+
+		return common_ancestor_type, len(generalizations)
+
+	def generalize(self,frequency_dict,graph,s,p,o): #naive generalization function, visiting WordNet taxonomy by visiting 3 steps of the hierarchy.
+							 #Each generalization found (even non common ones) are added inside the final result
+							 #It is quicker than generalize_common due to the reduced amount of SPARQL queries
 		def update_graph(self,frequency_dict,s,p,o,o_wn_generalized_str):
 			if o_wn_generalized_str not in frequency_dict[s][p].keys():
 				frequency_dict[s][p][o_wn_generalized_str] = {}
@@ -192,20 +240,15 @@ class Parser:
 
 		if isinstance(result,bytes) or result == None or len(result['results']['bindings']) == 0:
 			return frequency_dict
-		else:
-			pass
 
 		o_wn_generalized = result['results']['bindings'][0]['o']['value']
-		#o_wn_generalized_str = o_wn_generalized.split('-')[1]
 		o_wn_generalized_str = str(o_wn_generalized)
 
 		o_wn_generalized2 = result['results']['bindings'][0]['o2']['value']
-		#o_wn_generalized2_str = o_wn_generalized2.split('-')[1]
 		o_wn_generalized2_str = str(o_wn_generalized2)
 
 		o_wn_generalized3 = result['results']['bindings'][0]['o3']['value']
 		o_wn_generalized3_str = str(o_wn_generalized3)
-		#o_wn_generalized3_str = o_wn_generalized3.split('-')[1]
 
 		frequency_dict = update_graph(self,frequency_dict,s,p,o,o_wn_generalized_str)
 		frequency_dict = update_graph(self,frequency_dict,s,p,o,o_wn_generalized2_str)
@@ -226,7 +269,7 @@ class Parser:
 
 		return copied_dict
 
-	def print_statistics(self,frequency_dict):
+	def print_statistics(self,frequency_dict): #used for calculating statistics about most frequent groupings or most frequent types
 		most_frequent_types = {}
 		for k1,v1 in frequency_dict.items():
 			if not isinstance(v1,dict): continue
@@ -293,9 +336,4 @@ class Parser:
 		types_list = normalize(np.array([v for k,v in types.items()])[:,np.newaxis], axis=0).reshape(-1)
 		types_names = [k for k,v in types.items()]
 		types_given_frame_list = normalize(np.array([v for k,v in types_given_frame.items()])[:,np.newaxis], axis=0).reshape(-1)
-		"""if 'compose' in str(frame) or 'sing' in str(frame) or 'write' in str(frame) or 'record' in str(frame):
-			print("Frame {}".format(frame))
-			print("before: {}".format([[x.split('/')[-1],y,z] for x,y,z in zip(types_names,types_list,np.arange(len(types_names)))]))
-			print("after: {}".format([[x.split('/')[-1],y,z] for x,y,z in zip(types_names,types_given_frame_list,np.arange(len(types_names)))]))
-		""" #print("Selectional preference of frame {} is {}".format(frame.split('/')[-1].split('#')[-1],entropy(types_given_frame_list,types_list)))
-		return frame, entropy(types_list,types_given_frame_list)
+		return frame, entropy(types_given_frame_list,types_list)
